@@ -41,6 +41,13 @@ jobs:
             echo "changes=true" >> $GITHUB_ENV
           fi
 
+      - name: Create new branch for PR
+        if: env.changes == 'true'
+        run: |
+          NEW_BRANCH="update-gitignore-$(date +%Y%m%d%H%M%S)"
+          git checkout -b $NEW_BRANCH
+          echo "new_branch=$NEW_BRANCH" >> $GITHUB_ENV
+
       - name: Commit changes
         if: env.changes == 'true'
         run: git commit -m "${{ inputs.commit_message }}"
@@ -52,16 +59,17 @@ jobs:
           git fetch origin
           git rebase origin/${{ inputs.branch }} --autostash
 
-      - name: Push changes
+      - name: Push changes to new branch
         if: env.changes == 'true'
-        run: git push origin HEAD:${{ inputs.branch }} --force-with-lease
+        run: git push origin HEAD:${{ env.new_branch }} --force-with-lease
 
       - name: Create Pull Request
         if: env.changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "${{ inputs.commit_message }}"
-          branch: ${{ inputs.branch }}
+          branch: ${{ env.new_branch }}
+          base: ${{ inputs.branch }}
           title: 'Update .gitignore'
           body: 'Automated update of .gitignore file'
           labels: ${{ inputs.labels }}
