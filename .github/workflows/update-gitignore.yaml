@@ -11,8 +11,6 @@ on:
 jobs:
   update-gitignore:
     runs-on: ubuntu-latest
-    env:
-      COMMIT_MESSAGE: "Update .gitignore - Automated update [skip ci]"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,3 +38,5 @@ jobs:
           branch: update-gitignore
           title: "${{ env.COMMIT_MESSAGE }}"
           delete-branch: true
+        env:
+          COMMIT_MESSAGE: "Update .gitignore - Automated update [skip ci]"
