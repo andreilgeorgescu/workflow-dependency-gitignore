@@ -39,4 +39,4 @@ jobs:
           title: "${{ env.COMMIT_MESSAGE }}"
           delete-branch: true
         env:
-          COMMIT_MESSAGE: "Update .gitignore - Automated update [skip ci]"
+          COMMIT_MESSAGE: "Update .gitignore [skip ci]"
