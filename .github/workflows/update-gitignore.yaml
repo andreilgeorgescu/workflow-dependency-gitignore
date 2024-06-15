@@ -73,3 +73,7 @@ jobs:
           title: 'Update .gitignore'
           body: 'Automated update of .gitignore file'
           labels: ${{ inputs.labels }}
+
+      - name: No changes detected
+        if: env.changes == 'false'
+        run: echo "No changes detected. Skipping the rest of the workflow."
