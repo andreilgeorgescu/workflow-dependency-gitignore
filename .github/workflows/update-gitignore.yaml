@@ -1,9 +1,23 @@
 name: Update .gitignore
 
 on:
-  schedule:
-    - cron: '0 0 * * 0' # Runs every Sunday at midnight
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+        description: 'Branch to push the changes to'
+      commit_message:
+        required: true
+        type: string
+        description: 'Commit message for the update'
+      labels:
+        required: true
+        type: string
+        description: 'Labels for the pull request'
+    secrets:
+      ACTIONS_PAT:
+        required: true
 
 jobs:
   update-gitignore:
@@ -21,20 +35,32 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add .gitignore
-          git diff --cached --exit-code || echo "::set-output name=changes::true"
+          if git diff --cached --quiet; then
+            echo "changes=false" >> $GITHUB_ENV
+          else
+            echo "changes=true" >> $GITHUB_ENV
 
       - name: Commit changes
-        if: steps.git_diff.outputs.changes == 'true'
+        if: env.changes == 'true'
+        run: git commit -m "${{ inputs.commit_message }}"
+
+      - name: Fetch and rebase before push
+        if: env.changes == 'true'
         run: |
-          git commit -m 'Update .gitignore'
-          git push origin HEAD:update-gitignore
+          git remote set-url origin https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}
+          git fetch origin
+          git rebase origin/${{ inputs.branch }} --autostash
+
+      - name: Push changes
+        if: env.changes == 'true'
+        run: git push origin HEAD:${{ inputs.branch }} --force-with-lease
 
       - name: Create Pull Request
-        if: steps.git_diff.outputs.changes == 'true'
+        if: env.changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: 'Update .gitignore'
-          branch: update-gitignore
+          commit-message: "${{ inputs.commit_message }}"
+          branch: ${{ inputs.branch }}
           title: 'Update .gitignore'
           body: 'Automated update of .gitignore file'
-          labels: update
+          labels: ${{ inputs.labels }}
