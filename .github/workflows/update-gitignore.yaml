@@ -35,9 +35,14 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add .gitignore
+          echo "Checking for changes in .gitignore..."
           if git diff --cached --quiet; then
+            echo "No changes detected in .gitignore."
             echo "changes=false" >> $GITHUB_ENV
           else
+            echo "Changes detected in .gitignore."
+            git status
+            git diff --cached
             echo "changes=true" >> $GITHUB_ENV
           fi
 
@@ -47,10 +52,13 @@ jobs:
           NEW_BRANCH="update-gitignore-$(date +%Y%m%d%H%M%S)"
           git checkout -b $NEW_BRANCH
           echo "new_branch=$NEW_BRANCH" >> $GITHUB_ENV
+          echo "New branch created: $NEW_BRANCH"
 
       - name: Commit changes
         if: env.changes == 'true'
-        run: git commit -m "${{ inputs.commit_message }}"
+        run: |
+          git commit -m "${{ inputs.commit_message }}"
+          echo "Changes committed with message: ${{ inputs.commit_message }}"
 
       - name: Fetch and rebase before push
         if: env.changes == 'true'
@@ -58,10 +66,13 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}
           git fetch origin
           git rebase origin/${{ inputs.branch }} --autostash
+          echo "Rebase completed."
 
       - name: Push changes to new branch
         if: env.changes == 'true'
-        run: git push origin HEAD:${{ env.new_branch }} --force-with-lease
+        run: |
+          git push origin HEAD:${{ env.new_branch }} --force-with-lease
+          echo "Changes pushed to branch: ${{ env.new_branch }}"
 
       - name: Create Pull Request
         if: env.changes == 'true'
@@ -73,6 +84,7 @@ jobs:
           title: 'Update .gitignore'
           body: 'Automated update of .gitignore file'
           labels: ${{ inputs.labels }}
+          echo "Pull request created for branch: ${{ env.new_branch }}"
 
       - name: No changes detected
         if: env.changes == 'false'
