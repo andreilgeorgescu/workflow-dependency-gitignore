@@ -1,8 +1,6 @@
 name: Update .gitignore
-on:
-  push:
-    branches:
-      - main
+
+on: workflow_call
 
 jobs:
   update-gitignore:
