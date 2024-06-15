@@ -84,7 +84,6 @@ jobs:
           title: 'Update .gitignore'
           body: 'Automated update of .gitignore file'
           labels: ${{ inputs.labels }}
-          echo "Pull request created for branch: ${{ env.new_branch }}"
 
       - name: No changes detected
         if: env.changes == 'false'
