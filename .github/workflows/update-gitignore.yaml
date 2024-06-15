@@ -34,27 +34,11 @@ jobs:
             echo "changes=true" >> $GITHUB_ENV
           fi
 
-      - name: Commit changes
-        if: env.changes == 'true'
-        run: git commit -m "${{ env.COMMIT_MESSAGE }}"
-
-      - name: Fetch and rebase before push
-        if: env.changes == 'true'
-        run: |
-          git remote set-url origin https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}
-          git fetch origin
-          git rebase origin/${{ env.BRANCH }} --autostash
-
-      - name: Push changes
-        if: env.changes == 'true'
-        run: git push origin HEAD:update-gitignore --force-with-lease
-
       - name: Create Pull Request
         if: env.changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "${{ env.COMMIT_MESSAGE }}"
           branch: update-gitignore
-          title: 'Update .gitignore'
-          body: 'Automated update of .gitignore file'
-          labels: update
+          title: "${{ env.COMMIT_MESSAGE }}"
+          delete-branch: true
