@@ -1,23 +1,8 @@
 name: Update .gitignore
-
 on:
-  workflow_call:
-    inputs:
-      branch:
-        required: true
-        type: string
-        description: 'Branch to push the changes to'
-      commit_message:
-        required: true
-        type: string
-        description: 'Commit message for the update'
-      labels:
-        required: true
-        type: string
-        description: 'Labels for the pull request'
-    secrets:
-      ACTIONS_PAT:
-        required: true
+  push:
+    branches:
+      - main
 
 jobs:
   update-gitignore:
@@ -30,61 +15,28 @@ jobs:
         run: curl -s https://www.toptal.com/developers/gitignore/api/linux,git,zsh,visualstudiocode -o .gitignore
 
       - name: Check for changes
-        id: git_diff
+        id: gitignore_check
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add .gitignore
-          echo "Checking for changes in .gitignore..."
           if git diff --cached --quiet; then
             echo "No changes detected in .gitignore."
             echo "changes=false" >> $GITHUB_ENV
           else
             echo "Changes detected in .gitignore."
-            git status
-            git diff --cached
+            git commit -m "Update .gitignore - Automated update [skip ci]"
             echo "changes=true" >> $GITHUB_ENV
           fi
-
-      - name: Create new branch for PR
-        if: env.changes == 'true'
-        run: |
-          NEW_BRANCH="update-gitignore-$(date +%Y%m%d%H%M%S)"
-          git checkout -b $NEW_BRANCH
-          echo "new_branch=$NEW_BRANCH" >> $GITHUB_ENV
-          echo "New branch created: $NEW_BRANCH"
-
-      - name: Commit changes
-        if: env.changes == 'true'
-        run: |
-          git commit -m "${{ inputs.commit_message }}"
-          echo "Changes committed with message: ${{ inputs.commit_message }}"
-
-      - name: Fetch and rebase before push
-        if: env.changes == 'true'
-        run: |
-          git remote set-url origin https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}
-          git fetch origin
-          git rebase origin/${{ inputs.branch }} --autostash
-          echo "Rebase completed."
-
-      - name: Push changes to new branch
-        if: env.changes == 'true'
-        run: |
-          git push origin HEAD:${{ env.new_branch }} --force-with-lease
-          echo "Changes pushed to branch: ${{ env.new_branch }}"
 
       - name: Create Pull Request
         if: env.changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "${{ inputs.commit_message }}"
-          branch: ${{ env.new_branch }}
-          base: ${{ inputs.branch }}
-          title: 'Update .gitignore'
-          body: 'Automated update of .gitignore file'
-          labels: ${{ inputs.labels }}
-
-      - name: No changes detected
-        if: env.changes == 'false'
-        run: echo "No changes detected. Skipping the rest of the workflow."
+          commit-message: Update .gitignore - Automated update [skip ci]
+          branch: update-gitignore-${{ github.run_id }}
+          base: main
+          title: Update .gitignore
+          body: Automated update of .gitignore file
+          labels: update
+          token: ${{ secrets.GITHUB_TOKEN }}
