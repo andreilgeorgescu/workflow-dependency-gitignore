@@ -12,8 +12,6 @@ jobs:
   update-gitignore:
     runs-on: ubuntu-latest
     env:
-      ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-      BRANCH: main
       COMMIT_MESSAGE: "Update .gitignore - Automated update [skip ci]"
     steps:
       - name: Checkout repository
